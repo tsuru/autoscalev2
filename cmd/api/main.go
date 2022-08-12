@@ -13,7 +13,7 @@ import (
 var httpBindAddress string
 
 func main() {
-	flag.StringVar(&httpBindAddress, "http-bind-address", ":8081", "The TCP port that the web API should bind to")
+	flag.StringVar(&httpBindAddress, "http-bind-address", ":8081", "The TCP address that the web API should bind to")
 	flag.Parse()
 
 	// Web API stuff
