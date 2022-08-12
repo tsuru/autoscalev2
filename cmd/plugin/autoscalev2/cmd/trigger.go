@@ -105,7 +105,7 @@ func runAddTrigger(c *cli.Context) error {
 		return err
 	}
 
-	var config map[string]interface{}
+	var config clientTypes.TriggerMetadata
 	if err := json.Unmarshal([]byte(c.String("config")), &config); err != nil {
 		return fmt.Errorf("Config could not be parsed. Not a valid JSON: %w", err)
 	}
