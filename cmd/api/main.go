@@ -21,7 +21,7 @@ func main() {
 
 	fmt.Printf("Starting web server at %s\n", httpBindAddress)
 	err := server.Start(httpBindAddress)
-	if err != nil && errors.Is(err, http.ErrServerClosed) {
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		fmt.Fprintf(os.Stderr, "failed to start web server: %s\n", err)
 		os.Exit(1)
 	}
