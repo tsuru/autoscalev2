@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -9,6 +10,7 @@ import (
 	client "github.com/tsuru/autoscalev2/cmd/plugin/autoscalev2/stub"
 	clientTypes "github.com/tsuru/autoscalev2/cmd/plugin/autoscalev2/stub"
 	"github.com/urfave/cli/v2"
+	"gopkg.in/yaml.v3"
 )
 
 func NewCmdTrigger() *cli.Command {
@@ -19,6 +21,7 @@ func NewCmdTrigger() *cli.Command {
 			NewCmdTriggerList(),
 			NewCmdTriggerAdd(),
 			NewCmdTriggerDelete(),
+			NewCmdTriggerGet(),
 		},
 	}
 }
@@ -188,6 +191,62 @@ func runDeleteTrigger(c *cli.Context) error {
 	if err := cli.DeleteTrigger(c.Context, args); err != nil {
 		return fmt.Errorf("Error deleting trigger %q: %w", c.String("name"), err)
 	}
+
+	return nil
+}
+
+func NewCmdTriggerGet() *cli.Command {
+	return &cli.Command{
+		Name:  "get",
+		Usage: "Get configuration for a trigger on the instance",
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:     "instance",
+				Aliases:  []string{"i"},
+				Usage:    "the reverse proxy instance name",
+				Required: true,
+			},
+			&cli.StringFlag{
+				Name:     "name",
+				Aliases:  []string{"n"},
+				Usage:    "Name for the trigger",
+				Required: true,
+			},
+		},
+		Before: setupClient,
+		Action: runGetTrigger,
+	}
+}
+
+func runGetTrigger(c *cli.Context) error {
+	cli, err := getClient(c)
+	if err != nil {
+		return err
+	}
+
+	args := client.GetTriggerArgs{
+		Instance: c.String("instance"),
+		Name:     c.String("name"),
+	}
+
+	trigger, err := cli.GetTrigger(c.Context, args)
+	if err != nil {
+		return fmt.Errorf("Error getting trigger %q: %w", c.String("name"), err)
+	}
+
+	var buf bytes.Buffer
+	yamlEncoder := yaml.NewEncoder(&buf)
+	yamlEncoder.SetIndent(2)
+	printMetadata := map[string]interface{}{
+		"Configuration": trigger.Metadata,
+	}
+	yamlEncoder.Encode(printMetadata)
+
+	fmt.Fprintf(c.App.Writer, "Instance: %s\n", args.Instance)
+	fmt.Fprintf(c.App.Writer, "Trigger Name: %s\n", trigger.Name)
+	fmt.Fprintf(c.App.Writer, "Trigger Type: %s\n", trigger.Type)
+	fmt.Fprintln(c.App.Writer, "")
+	fmt.Fprintln(c.App.Writer, buf.String())
 
 	return nil
 }
