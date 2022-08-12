@@ -23,6 +23,13 @@ type ListTriggersArgs struct {
 	Instance string
 }
 
+type UpsertTriggerArgs struct {
+	Instance string
+	Name     string
+	Type     string
+	Metadata map[string]interface{}
+}
+
 type Trigger struct {
 	Name     string            `json:"name"`
 	Type     string            `json:"type"`
@@ -45,7 +52,7 @@ func (cli *Client) ListTriggers(c context.Context, args ListTriggersArgs) ([]Tri
 			"my-trigger-prom",
 			"Prometheus",
 			map[string]string{
-				"serverAddress":       "http://<prometheus-host>:9090",
+				"serverAddress":       "http://prometheus-host:9090",
 				"metricName":          "http_requests_total",
 				"query":               "sum(rate(http_requests_total{deployment=\"my-deployment\"}[2m]))",
 				"threshold":           "100.50",
@@ -53,4 +60,7 @@ func (cli *Client) ListTriggers(c context.Context, args ListTriggersArgs) ([]Tri
 			},
 		},
 	}, nil
+}
+func (cli *Client) UpsertTrigger(c context.Context, args UpsertTriggerArgs) error {
+	return nil
 }
