@@ -7,8 +7,15 @@ package web
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"sync"
+
+	"encoding/json"
+
+	"github.com/tsuru/tsuru/cmd"
+	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -55,7 +62,38 @@ func listPlans(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
+type CreateOpts struct {
+	AppName string
+	Content []byte
+}
+
+func toConfigMap(appName string, content map[string]string) (corev1.ConfigMap, error) {
+	client := cmd.NewClient(http.DefaultClient, context.TODO())
+	cm := corev1.ConfigMap{
+		TypeMeta: v1.TypeMeta{
+			Kind:       "ConfigMap",
+			APIVersion: "v1",
+		},
+		ObjectMeta: v1.ObjectMeta{
+			Name: fmt.Sprintf("%s-scaledObject-config", appName),
+		},
+	}
+
+	return nil, nil
+}
+
 func createInstance(c echo.Context) error {
+	var opts CreateOpts
+	err := json.NewDecoder(c.Request().Body).Decode(&opts)
+	if err != nil {
+		return err
+	}
+	var mappedContent map[string]string
+	if err := json.Unmarshal(opts.Content, &mappedContent); err != nil {
+		return err
+	}
+
+	cm, err := toConfigMap(opts.AppName, mappedContent)
 	return errors.New("not implemented yet")
 }
 
