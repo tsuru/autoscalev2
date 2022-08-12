@@ -18,7 +18,6 @@ func NewCmdTrigger() *cli.Command {
 		Subcommands: []*cli.Command{
 			NewCmdTriggerList(),
 			NewCmdTriggerAdd(),
-			// NewCmdTriggerDelete(),
 		},
 	}
 }
@@ -44,6 +43,51 @@ func NewCmdTriggerList() *cli.Command {
 		Before: setupClient,
 		Action: runListTriggers,
 	}
+}
+
+func runListTriggers(c *cli.Context) error {
+	cli, err := getClient(c)
+	if err != nil {
+		return err
+	}
+
+	args := client.ListTriggersArgs{Instance: c.String("instance")}
+	routes, err := cli.ListTriggers(c.Context, args)
+	if err != nil {
+		return err
+	}
+
+	if c.Bool("raw-output") {
+		return writeTriggersListRawOutput(c.App.Writer, routes)
+	}
+	return writeTriggersListSimple(c.App.Writer, routes)
+}
+
+func writeTriggersListSimple(w io.Writer, triggers []clientTypes.Trigger) error {
+	data := [][]string{}
+	for _, t := range triggers {
+		data = append(data, []string{t.Name, t.Type})
+	}
+
+	table := tablewriter.NewWriter(w)
+	table.SetHeader([]string{"Name", "Type"})
+	table.SetAutoWrapText(false)
+	table.SetAutoFormatHeaders(false)
+	table.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
+	table.SetColumnAlignment([]int{tablewriter.ALIGN_LEFT, tablewriter.ALIGN_LEFT, tablewriter.ALIGN_CENTER, tablewriter.ALIGN_LEFT})
+	table.AppendBulk(data)
+	table.Render()
+	return nil
+}
+
+func writeTriggersListRawOutput(w io.Writer, triggers []clientTypes.Trigger) error {
+	message, err := json.MarshalIndent(triggers, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	fmt.Fprintln(w, string(message))
+	return nil
 }
 
 func NewCmdTriggerAdd() *cli.Command {
@@ -81,24 +125,6 @@ func NewCmdTriggerAdd() *cli.Command {
 	}
 }
 
-func runListTriggers(c *cli.Context) error {
-	cli, err := getClient(c)
-	if err != nil {
-		return err
-	}
-
-	args := client.ListTriggersArgs{Instance: c.String("instance")}
-	routes, err := cli.ListTriggers(c.Context, args)
-	if err != nil {
-		return err
-	}
-
-	if c.Bool("raw-output") {
-		return writeTriggersListRawOutput(c.App.Writer, routes)
-	}
-	return writeTriggersListSimple(c.App.Writer, routes)
-}
-
 func runAddTrigger(c *cli.Context) error {
 	cli, err := getClient(c)
 	if err != nil {
@@ -121,32 +147,5 @@ func runAddTrigger(c *cli.Context) error {
 		return fmt.Errorf("Error creating/updating trigger %q: %w", c.String("name"), err)
 	}
 
-	return nil
-}
-
-func writeTriggersListSimple(w io.Writer, triggers []clientTypes.Trigger) error {
-	data := [][]string{}
-	for _, t := range triggers {
-		data = append(data, []string{t.Name, t.Type})
-	}
-
-	table := tablewriter.NewWriter(w)
-	table.SetHeader([]string{"Name", "Type"})
-	table.SetAutoWrapText(false)
-	table.SetAutoFormatHeaders(false)
-	table.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
-	table.SetColumnAlignment([]int{tablewriter.ALIGN_LEFT, tablewriter.ALIGN_LEFT, tablewriter.ALIGN_CENTER, tablewriter.ALIGN_LEFT})
-	table.AppendBulk(data)
-	table.Render()
-	return nil
-}
-
-func writeTriggersListRawOutput(w io.Writer, triggers []clientTypes.Trigger) error {
-	message, err := json.MarshalIndent(triggers, "", "  ")
-	if err != nil {
-		return err
-	}
-
-	fmt.Fprintln(w, string(message))
 	return nil
 }
