@@ -18,6 +18,7 @@ func NewCmdTrigger() *cli.Command {
 		Subcommands: []*cli.Command{
 			NewCmdTriggerList(),
 			NewCmdTriggerAdd(),
+			NewCmdTriggerDelete(),
 		},
 	}
 }
@@ -145,6 +146,47 @@ func runAddTrigger(c *cli.Context) error {
 
 	if err := cli.UpsertTrigger(c.Context, args); err != nil {
 		return fmt.Errorf("Error creating/updating trigger %q: %w", c.String("name"), err)
+	}
+
+	return nil
+}
+
+func NewCmdTriggerDelete() *cli.Command {
+	return &cli.Command{
+		Name:  "delete",
+		Usage: "Delete a trigger on the instance",
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:     "instance",
+				Aliases:  []string{"i"},
+				Usage:    "the reverse proxy instance name",
+				Required: true,
+			},
+			&cli.StringFlag{
+				Name:     "name",
+				Aliases:  []string{"n"},
+				Usage:    "Name for the trigger",
+				Required: true,
+			},
+		},
+		Before: setupClient,
+		Action: runDeleteTrigger,
+	}
+}
+
+func runDeleteTrigger(c *cli.Context) error {
+	cli, err := getClient(c)
+	if err != nil {
+		return err
+	}
+
+	args := client.DeleteTriggerArgs{
+		Instance: c.String("instance"),
+		Name:     c.String("name"),
+	}
+
+	if err := cli.DeleteTrigger(c.Context, args); err != nil {
+		return fmt.Errorf("Error deleting trigger %q: %w", c.String("name"), err)
 	}
 
 	return nil

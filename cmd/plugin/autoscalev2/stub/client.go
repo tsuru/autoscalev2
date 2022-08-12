@@ -32,6 +32,11 @@ type UpsertTriggerArgs struct {
 	Metadata TriggerMetadata
 }
 
+type DeleteTriggerArgs struct {
+	Instance string
+	Name     string
+}
+
 type Trigger struct {
 	Name     string          `json:"name"`
 	Type     string          `json:"type"`
@@ -64,5 +69,8 @@ func (cli *Client) ListTriggers(c context.Context, args ListTriggersArgs) ([]Tri
 	}, nil
 }
 func (cli *Client) UpsertTrigger(c context.Context, args UpsertTriggerArgs) error {
+	return nil
+}
+func (cli *Client) DeleteTrigger(c context.Context, args DeleteTriggerArgs) error {
 	return nil
 }
