@@ -23,10 +23,19 @@ type ListTriggersArgs struct {
 	Instance string
 }
 
+type TriggerMetadata map[string]interface{}
+
+type UpsertTriggerArgs struct {
+	Instance string
+	Name     string
+	Type     string
+	Metadata TriggerMetadata
+}
+
 type Trigger struct {
-	Name     string            `json:"name"`
-	Type     string            `json:"type"`
-	Metadata map[string]string `json:"metadata"`
+	Name     string          `json:"name"`
+	Type     string          `json:"type"`
+	Metadata TriggerMetadata `json:"metadata"`
 }
 
 func (cli *Client) ListTriggers(c context.Context, args ListTriggersArgs) ([]Trigger, error) {
@@ -34,7 +43,7 @@ func (cli *Client) ListTriggers(c context.Context, args ListTriggersArgs) ([]Tri
 		{
 			"my-trigger-cron",
 			"Cron",
-			map[string]string{
+			TriggerMetadata{
 				"timezone":        "America/Sao_Paulo",
 				"start":           "30 * * * *",
 				"end":             "45 * * * *",
@@ -44,8 +53,8 @@ func (cli *Client) ListTriggers(c context.Context, args ListTriggersArgs) ([]Tri
 		{
 			"my-trigger-prom",
 			"Prometheus",
-			map[string]string{
-				"serverAddress":       "http://<prometheus-host>:9090",
+			TriggerMetadata{
+				"serverAddress":       "http://prometheus-host:9090",
 				"metricName":          "http_requests_total",
 				"query":               "sum(rate(http_requests_total{deployment=\"my-deployment\"}[2m]))",
 				"threshold":           "100.50",
@@ -53,4 +62,7 @@ func (cli *Client) ListTriggers(c context.Context, args ListTriggersArgs) ([]Tri
 			},
 		},
 	}, nil
+}
+func (cli *Client) UpsertTrigger(c context.Context, args UpsertTriggerArgs) error {
+	return nil
 }

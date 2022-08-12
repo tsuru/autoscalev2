@@ -17,6 +17,7 @@ func NewCmdTrigger() *cli.Command {
 		Usage: "Manages autoscalev2 triggers",
 		Subcommands: []*cli.Command{
 			NewCmdTriggerList(),
+			NewCmdTriggerAdd(),
 		},
 	}
 }
@@ -28,7 +29,7 @@ func NewCmdTriggerList() *cli.Command {
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:     "instance",
-				Aliases:  []string{"tsuru-service-instance", "i"},
+				Aliases:  []string{"i"},
 				Usage:    "the reverse proxy instance name",
 				Required: true,
 			},
@@ -86,5 +87,65 @@ func writeTriggersListRawOutput(w io.Writer, triggers []clientTypes.Trigger) err
 	}
 
 	fmt.Fprintln(w, string(message))
+	return nil
+}
+
+func NewCmdTriggerAdd() *cli.Command {
+	return &cli.Command{
+		Name:  "add",
+		Usage: "Add a trigger on the instance",
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:     "instance",
+				Aliases:  []string{"i"},
+				Usage:    "the reverse proxy instance name",
+				Required: true,
+			},
+			&cli.StringFlag{
+				Name:     "name",
+				Aliases:  []string{"n"},
+				Usage:    "Name for the trigger",
+				Required: true,
+			},
+			&cli.StringFlag{
+				Name:     "type",
+				Aliases:  []string{"t"},
+				Usage:    "Type of the trigger (https://keda.sh/docs/scalers)",
+				Required: true,
+			},
+			&cli.StringFlag{
+				Name:     "config",
+				Aliases:  []string{"metadata", "c"},
+				Usage:    "Configuration for the trigger (metadata schema depends on the trigger type)",
+				Required: true,
+			},
+		},
+		Before: setupClient,
+		Action: runAddTrigger,
+	}
+}
+
+func runAddTrigger(c *cli.Context) error {
+	cli, err := getClient(c)
+	if err != nil {
+		return err
+	}
+
+	var config clientTypes.TriggerMetadata
+	if err := json.Unmarshal([]byte(c.String("config")), &config); err != nil {
+		return fmt.Errorf("Config could not be parsed. Not a valid JSON: %w", err)
+	}
+
+	args := client.UpsertTriggerArgs{
+		Instance: c.String("instance"),
+		Name:     c.String("name"),
+		Type:     c.String("type"),
+		Metadata: config,
+	}
+
+	if err := cli.UpsertTrigger(c.Context, args); err != nil {
+		return fmt.Errorf("Error creating/updating trigger %q: %w", c.String("name"), err)
+	}
+
 	return nil
 }
